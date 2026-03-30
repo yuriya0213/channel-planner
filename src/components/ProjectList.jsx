@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { db } from '../firebase'
 import {
   collection, addDoc, deleteDoc, doc,
-  onSnapshot, query, orderBy, serverTimestamp
+  onSnapshot, query, orderBy, serverTimestamp, updateDoc, arrayUnion, arrayRemove
 } from 'firebase/firestore'
 
 const COLORS = [
@@ -11,7 +11,7 @@ const COLORS = [
   'bg-pink-400', 'bg-teal-400',
 ]
 
-export default function ProjectList({ onOpen }) {
+export default function ProjectList({ onOpen, user }) {
   const [projects, setProjects] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -21,9 +21,13 @@ export default function ProjectList({ onOpen }) {
   useEffect(() => {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'))
     return onSnapshot(q, (snap) => {
-      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      // 自分が招待されているプロジェクトだけ表示
+      setProjects(all.filter(p =>
+        p.allowedEmails && p.allowedEmails.includes(user.email)
+      ))
     })
-  }, [])
+  }, [user.email])
 
   const addProject = async (e) => {
     e.preventDefault()
@@ -32,15 +36,18 @@ export default function ProjectList({ onOpen }) {
       name: name.trim(),
       description: desc.trim(),
       color,
+      ownerEmail: user.email,
+      allowedEmails: [user.email],
       createdAt: serverTimestamp(),
     })
     setName(''); setDesc(''); setColor(COLORS[0]); setShowForm(false)
   }
 
-  const deleteProject = async (e, id) => {
+  const deleteProject = async (e, p) => {
     e.stopPropagation()
+    if (p.ownerEmail !== user.email) return alert('作成者のみ削除できます')
     if (!confirm('このプロジェクトを削除しますか？')) return
-    await deleteDoc(doc(db, 'projects', id))
+    await deleteDoc(doc(db, 'projects', p.id))
   }
 
   return (
@@ -115,14 +122,17 @@ export default function ProjectList({ onOpen }) {
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-800 text-lg">{p.name}</p>
                 {p.description && <p className="text-gray-500 text-sm truncate">{p.description}</p>}
+                <p className="text-xs text-gray-400 mt-0.5">👥 {p.allowedEmails?.length || 1}人</p>
               </div>
               <div className="flex gap-2 items-center">
                 <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">開く →</span>
-                <button
-                  onClick={e => deleteProject(e, p.id)}
-                  className="text-gray-300 hover:text-red-400 text-lg px-1"
-                  title="削除"
-                >✕</button>
+                {p.ownerEmail === user.email && (
+                  <button
+                    onClick={e => deleteProject(e, p)}
+                    className="text-gray-300 hover:text-red-400 text-lg px-1"
+                    title="削除"
+                  >✕</button>
+                )}
               </div>
             </div>
           ))}
