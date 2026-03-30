@@ -42,7 +42,7 @@ export default function ProjectDashboard({ projectId, onBack, user }) {
     })
   }
 
-  const isOwner = project?.ownerEmail === user.email
+ const isOwner = !project?.ownerEmail || project?.ownerEmail === user.email
 
   if (!project) return <div className="p-10 text-center text-gray-400">読み込み中...</div>
 
