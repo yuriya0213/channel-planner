@@ -3,13 +3,13 @@ import { getFirestore } from 'firebase/firestore'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDHZ5H3uCrhVDEU4iwDK3y1TDgDxWhpySA",
-  authDomain: "sora-kun-21dff.firebaseapp.com",
-  projectId: "sora-kun-21dff",
-  storageBucket: "sora-kun-21dff.firebasestorage.app",
-  messagingSenderId: "1027071518601",
-  appId: "1:1027071518601:web:a23909202349350c746358",
-  measurementId: "G-YDYRYNS7CV"
+  apiKey: "AIzaSyCg8KgujNZUaSeekbUTQBNJbaTCDWH8sWI",
+  authDomain: "running-8a8d5.firebaseapp.com",
+  projectId: "running-8a8d5",
+  storageBucket: "running-8a8d5.firebasestorage.app",
+  messagingSenderId: "401592728511",
+  appId: "1:401592728511:web:ef41e9307781c32aa2bf0a",
+  measurementId: "G-C700ZKVCW2"
 }
 
 const app = initializeApp(firebaseConfig)
