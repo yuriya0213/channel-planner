@@ -5,7 +5,111 @@ import CalendarView from './CalendarView'
 import TodoView from './TodoView'
 import MembersPanel from './MembersPanel'
 
-export default function ProjectDashboard({ projectId, onBack, user }) {
+const EVENT_TYPES = [
+  { value: 'recording', label: '🎬 収録' },
+  { value: 'upload', label: '📤 投稿' },
+  { value: 'meeting', label: '💬 ミーティング' },
+  { value: 'deadline', label: '⏰ 締め切り' },
+  { value: 'other', label: '📌 その他' },
+]
+
+const DEFAULT_TEMPLATE = [
+  { label: '撮影', type: 'recording', offsetDays: -7 },
+  { label: '編集完了', type: 'deadline', offsetDays: -3 },
+  { label: 'サムネ確認', type: 'other', offsetDays: -1 },
+]
+
+function TemplateSettings({ project, projectId, isOwner }) {
+  const template = project?.scheduleTemplate || DEFAULT_TEMPLATE
+  const [items, setItems] = useState(template)
+  const [saved, setSaved] = useState(false)
+  const [newItem, setNewItem] = useState({ label: '', type: 'recording', offsetDays: -7 })
+
+  const save = async () => {
+    await updateDoc(doc(db, 'projects', projectId), { scheduleTemplate: items })
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i))
+
+  const addItem = () => {
+    if (!newItem.label.trim()) return
+    setItems([...items, { ...newItem, offsetDays: Number(newItem.offsetDays) }])
+    setNewItem({ label: '', type: 'recording', offsetDays: -7 })
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <h3 className="font-bold text-gray-800 mb-1">📋 逆算テンプレート設定</h3>
+      <p className="text-sm text-gray-500 mb-4">投稿日から何日前に何のイベントを作るか設定します。</p>
+
+      <div className="space-y-2 mb-4">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+            <span className="text-sm text-gray-500 w-16 flex-shrink-0">
+              {item.offsetDays > 0 ? `+${item.offsetDays}日後` : `${item.offsetDays}日前`}
+            </span>
+            <span className="text-sm font-medium text-gray-800 flex-1">{item.label}</span>
+            <span className="text-xs text-gray-400">
+              {EVENT_TYPES.find(t => t.value === item.type)?.label}
+            </span>
+            {isOwner && (
+              <button onClick={() => removeItem(i)} className="text-gray-300 hover:text-red-400 text-sm ml-1">✕</button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {isOwner && (
+        <>
+          <div className="border-t border-gray-100 pt-4 mb-3">
+            <p className="text-xs font-medium text-gray-500 mb-2">項目を追加</p>
+            <div className="flex gap-2">
+              <input
+                className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                placeholder="ラベル（例：台本完成）"
+                value={newItem.label}
+                onChange={e => setNewItem(n => ({ ...n, label: e.target.value }))}
+              />
+              <input
+                type="number"
+                className="w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                placeholder="-7"
+                value={newItem.offsetDays}
+                onChange={e => setNewItem(n => ({ ...n, offsetDays: Number(e.target.value) }))}
+              />
+              <select
+                className="border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                value={newItem.type}
+                onChange={e => setNewItem(n => ({ ...n, type: e.target.value }))}
+              >
+                {EVENT_TYPES.filter(t => t.value !== 'upload').map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={addItem}
+                className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+              >
+                追加
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={save}
+            className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm"
+          >
+            {saved ? '✅ 保存しました' : '保存する'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+export default function ProjectDashboard({ projectId, onBack, user, admin }) {
   const [project, setProject] = useState(null)
   const [tab, setTab] = useState('calendar')
   const [showMembers, setShowMembers] = useState(false)
@@ -42,7 +146,7 @@ export default function ProjectDashboard({ projectId, onBack, user }) {
     })
   }
 
- const isOwner = !project?.ownerEmail || project?.ownerEmail === user.email
+  const isOwner = admin || !project?.ownerEmail || project?.ownerEmail === user.email
 
   if (!project) return <div className="p-10 text-center text-gray-400">読み込み中...</div>
 
@@ -88,15 +192,24 @@ export default function ProjectDashboard({ projectId, onBack, user }) {
               📅 カレンダー
             </button>
             <button
-              onClick={() => setTab('todo')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${tab === 'todo' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+              onClick={() => setTab('settings')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${tab === 'settings' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
             >
-              ✅ ToDo
+              ⚙️ 設定
             </button>
           </div>
 
-          {tab === 'calendar' && <CalendarView projectId={projectId} />}
-          {tab === 'todo' && <TodoView projectId={projectId} />}
+          {tab === 'calendar' && (
+            <div className="flex gap-4 items-start">
+              <div className="flex-1 min-w-0">
+                <CalendarView projectId={projectId} project={project} />
+              </div>
+              <div className="w-72 flex-shrink-0">
+                <TodoView projectId={projectId} />
+              </div>
+            </div>
+          )}
+          {tab === 'settings' && <TemplateSettings project={project} projectId={projectId} isOwner={isOwner} />}
         </div>
 
         {showMembers && (

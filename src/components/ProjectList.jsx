@@ -11,7 +11,7 @@ const COLORS = [
   'bg-pink-400', 'bg-teal-400',
 ]
 
-export default function ProjectList({ onOpen, user }) {
+export default function ProjectList({ onOpen, user, admin }) {
   const [projects, setProjects] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
@@ -22,8 +22,8 @@ export default function ProjectList({ onOpen, user }) {
     const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'))
     return onSnapshot(q, (snap) => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      // 自分が招待されているプロジェクトだけ表示
-      setProjects(all.filter(p =>
+      // 管理者は全プロジェクト表示、それ以外は招待されているもののみ
+      setProjects(admin ? all : all.filter(p =>
         p.allowedEmails && p.allowedEmails.includes(user.email)
       ))
     })

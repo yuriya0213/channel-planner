@@ -6,6 +6,11 @@ import ProjectDashboard from './components/ProjectDashboard'
 import Login from './components/Login'
 import './index.css'
 
+function isAdmin(email) {
+  if (!email) return false
+  return email.endsWith('@misfits.co.jp') || email === 'yuriya02130610@gmail.com'
+}
+
 export default function App() {
   const [user, setUser] = useState(undefined)
   const [projectId, setProjectId] = useState(null)
@@ -52,9 +57,9 @@ export default function App() {
       </div>
 
       {projectId ? (
-        <ProjectDashboard projectId={projectId} onBack={goHome} user={user} />
+        <ProjectDashboard projectId={projectId} onBack={goHome} user={user} admin={isAdmin(user.email)} />
       ) : (
-        <ProjectList onOpen={openProject} user={user} />
+        <ProjectList onOpen={openProject} user={user} admin={isAdmin(user.email)} />
       )}
     </div>
   )
