@@ -152,38 +152,43 @@ export default function ProjectDashboard({ projectId, onBack, user, admin }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <button onClick={onBack} className="text-gray-400 hover:text-gray-700 text-lg">← 戻る</button>
-          <div className={`w-8 h-8 rounded-lg ${project.color || 'bg-blue-400'} flex items-center justify-center text-white font-bold`}>
+      <header className="bg-white border-b border-gray-200 px-3 py-3">
+        <div className="max-w-5xl mx-auto flex items-center gap-2 min-w-0">
+          <button onClick={onBack} className="text-gray-400 hover:text-gray-700 text-sm font-medium flex-shrink-0 px-1">← 戻る</button>
+          <div className={`w-7 h-7 rounded-lg ${project.color || 'bg-blue-400'} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}>
             {project.name[0]}
           </div>
-          <h1 className="font-bold text-gray-800 text-xl flex-1">{project.name}</h1>
-          <button
-            onClick={() => setShowMembers(!showMembers)}
-            className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            👥 メンバー
-          </button>
-          {isOwner && (
+          <h1 className="font-bold text-gray-800 text-base flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{project.name}</h1>
+          <div className="flex items-center gap-1 flex-shrink-0">
             <button
-              onClick={() => setShowInvite(true)}
-              className="text-sm px-3 py-1.5 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50"
+              onClick={() => setShowMembers(!showMembers)}
+              className="text-xs px-2 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+              title="メンバー"
             >
-              ✉️ 招待
+              👥
             </button>
-          )}
-          <button
-            onClick={copyUrl}
-            className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            🔗 URLをコピー
-          </button>
+            {isOwner && (
+              <button
+                onClick={() => setShowInvite(true)}
+                className="text-xs px-2 py-1.5 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50"
+                title="招待"
+              >
+                ✉️
+              </button>
+            )}
+            <button
+              onClick={copyUrl}
+              className="text-xs px-2 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              title="URLをコピー"
+            >
+              🔗
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-4 flex gap-4">
-        <div className="flex-1 min-w-0">
+      <div className="max-w-5xl mx-auto px-4 py-4">
+        <div>
           <div className="flex gap-1 mb-4 bg-white border border-gray-200 rounded-xl p-1 w-fit">
             <button
               onClick={() => setTab('calendar')}
@@ -200,11 +205,11 @@ export default function ProjectDashboard({ projectId, onBack, user, admin }) {
           </div>
 
           {tab === 'calendar' && (
-            <div className="flex gap-4 items-start">
-              <div className="flex-1 min-w-0">
+            <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
+              <div style={{minWidth:0}}>
                 <CalendarView projectId={projectId} project={project} />
               </div>
-              <div className="w-72 flex-shrink-0">
+              <div>
                 <TodoView projectId={projectId} />
               </div>
             </div>
@@ -213,7 +218,7 @@ export default function ProjectDashboard({ projectId, onBack, user, admin }) {
         </div>
 
         {showMembers && (
-          <div className="w-64 flex-shrink-0">
+          <div className="mt-4">
             <MembersPanel projectId={projectId} />
           </div>
         )}

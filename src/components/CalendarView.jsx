@@ -23,6 +23,14 @@ function getTypeStyle(type) {
   return EVENT_TYPES.find(t => t.value === type)?.color || 'bg-gray-100 text-gray-700 border-gray-200'
 }
 
+const TYPE_DOT = {
+  recording: 'bg-purple-400',
+  upload: 'bg-green-400',
+  meeting: 'bg-blue-400',
+  deadline: 'bg-red-400',
+  other: 'bg-gray-400',
+}
+
 function getTypeLabel(type) {
   return EVENT_TYPES.find(t => t.value === type)?.label || type
 }
@@ -67,7 +75,9 @@ export default function CalendarView({ projectId, project }) {
   const openDateMenu = (e, day) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     const rect = e.currentTarget.getBoundingClientRect()
-    setDateMenu({ date: dateStr, x: rect.left, y: rect.bottom })
+    const menuW = 176
+    const x = Math.min(rect.left, window.innerWidth - menuW - 8)
+    setDateMenu({ date: dateStr, x: Math.max(x, 8), y: rect.bottom })
   }
 
   const openForm = (dateStr) => {
@@ -258,7 +268,7 @@ export default function CalendarView({ projectId, project }) {
         {/* 日付グリッド */}
         <div className="grid grid-cols-7">
           {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-            <div key={`empty-${i}`} className="min-h-[90px] border-r border-b border-gray-100 bg-gray-50" />
+            <div key={`empty-${i}`} className="min-h-[52px] sm:min-h-[90px] border-r border-b border-gray-100 bg-gray-50" />
           ))}
           {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -269,13 +279,23 @@ export default function CalendarView({ projectId, project }) {
             return (
               <div
                 key={day}
-                className="min-h-[90px] border-r border-b border-gray-100 p-1 hover:bg-blue-50 cursor-pointer transition"
+                className="min-h-[52px] sm:min-h-[90px] border-r border-b border-gray-100 p-1 hover:bg-blue-50 cursor-pointer transition"
                 onClick={e => openDateMenu(e, day)}
               >
                 <div className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-blue-600 text-white' : dow === 0 ? 'text-red-500' : dow === 6 ? 'text-blue-500' : 'text-gray-700'}`}>
                   {day}
                 </div>
-                <div className="space-y-0.5">
+                {/* モバイル: カラードット */}
+                <div className="flex gap-0.5 flex-wrap sm:hidden">
+                  {dayEvents.slice(0, 4).map(ev => (
+                    <span
+                      key={ev.id}
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ev.done ? 'bg-gray-300' : (TYPE_DOT[ev.type] || 'bg-gray-400')}`}
+                    />
+                  ))}
+                </div>
+                {/* デスクトップ: フルチップ */}
+                <div className="hidden sm:block space-y-0.5">
                   {dayEvents.slice(0, 3).map(ev => (
                     <div
                       key={ev.id}
@@ -283,7 +303,7 @@ export default function CalendarView({ projectId, project }) {
                       className={`text-xs px-1 py-0.5 rounded border flex items-center gap-1 cursor-pointer group transition ${ev.done ? 'opacity-40 bg-gray-100 border-gray-200 text-gray-400' : getTypeStyle(ev.type)}`}
                       title={ev.title}
                     >
-                      <span className="flex-shrink-0">{ev.done ? '✅' : EVENT_TYPES.find(t => t.value === ev.type)?.label.split(' ')[0] || '📌'}</span>
+                      {ev.done && <span className="flex-shrink-0">✅</span>}
                       <span className={`truncate ${ev.done ? 'line-through' : ''}`}>{ev.title}</span>
                       <button
                         onClick={e => { e.stopPropagation(); deleteEvent(ev.id) }}
@@ -321,10 +341,12 @@ export default function CalendarView({ projectId, project }) {
                   <span className={`text-xs px-2 py-0.5 rounded border flex-shrink-0 mt-0.5 ${getTypeStyle(ev.type)}`}>
                     {getTypeLabel(ev.type)}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <span className={`text-sm font-medium ${ev.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{ev.title}</span>
-                    <span className="text-xs text-gray-400 ml-2">{ev.date}</span>
-                    {ev.description && <p className="text-xs text-gray-500">{ev.description}</p>}
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <span className={`text-sm font-medium break-all ${ev.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{ev.title}</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0">{ev.date}</span>
+                    </div>
+                    {ev.description && <p className="text-xs text-gray-500 break-all">{ev.description}</p>}
                   </div>
                   <button onClick={() => deleteEvent(ev.id)} className="text-gray-300 hover:text-red-400 text-sm">✕</button>
                 </li>
