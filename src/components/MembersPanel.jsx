@@ -1,31 +1,20 @@
 import { useState, useEffect } from 'react'
 import { db } from '../firebase'
-import {
-  collection, addDoc, deleteDoc, doc,
-  onSnapshot, query, orderBy, serverTimestamp
-} from 'firebase/firestore'
+import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore'
 
 export default function MembersPanel({ projectId }) {
   const [members, setMembers] = useState([])
   const [name, setName] = useState('')
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'projects', projectId, 'members'),
-      orderBy('createdAt', 'asc')
-    )
-    return onSnapshot(q, snap => {
-      setMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
+    const q = query(collection(db, 'projects', projectId, 'members'), orderBy('createdAt', 'asc'))
+    return onSnapshot(q, snap => setMembers(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
   }, [projectId])
 
   const addMember = async (e) => {
     e.preventDefault()
     if (!name.trim()) return
-    await addDoc(collection(db, 'projects', projectId, 'members'), {
-      name: name.trim(),
-      createdAt: serverTimestamp(),
-    })
+    await addDoc(collection(db, 'projects', projectId, 'members'), { name: name.trim(), createdAt: serverTimestamp() })
     setName('')
   }
 
